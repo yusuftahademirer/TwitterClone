@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { auth, db } from '../services/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { theme } from '../constants/theme';
@@ -10,16 +10,32 @@ const ProfileScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (error) {
-      console.error('Çıkış hatası:', error);
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      'Çıkış Yap',
+      'Çıkış yapmak istediğinize emin misiniz?',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel',
+        },
+        {
+          text: 'Evet',
+          onPress: async () => {
+            try {
+              await auth.signOut();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error('Çıkış hatası:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const username = auth.currentUser?.email.split('@')[0] || 'Kullanıcı';
@@ -74,6 +90,8 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.tweetsContainer}>
         {loading ? (
           <ActivityIndicator size="large" color={theme.colors.twitterBlue} />
+        ) : tweets.length === 0 ? ( // Eğer tweet yoksa mesaj göster
+          <Text style={styles.noTweetsText}>Henüz tweet atmadınız</Text>
         ) : (
           <FlatList
             data={tweets}
@@ -111,15 +129,15 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: theme.colors.error,
-    padding: 15,
+    padding: 12,
     borderRadius: 30,
     alignItems: 'center',
     marginTop: 20,
-    marginHorizontal: 50,
+    marginHorizontal: 150,
   },
   logoutText: {
-    color: '#fff',
-    fontSize: 16,
+    color: "white",
+    fontSize: 12,
     fontWeight: 'bold',
   },
   tweetsContainer: {
@@ -140,6 +158,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.secondary,
     marginTop: 5,
+  },
+  noTweetsText: {
+    fontSize: 16,
+    color: theme.colors.secondary,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 

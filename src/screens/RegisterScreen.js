@@ -10,10 +10,16 @@ const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // Yeni şifre doğrulama alanı
 
   const handleRegister = async () => {
     if (!username || !password) {
       setError('Lütfen tüm alanları doldurunuz');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Şifreler eşleşmiyor');
       return;
     }
 
@@ -39,6 +45,9 @@ const RegisterScreen = ({ navigation }) => {
         createdAt: new Date()
       });
 
+      // Başarılı bir şekilde hesap oluşturulduğunda MainApp ekranına git
+      navigation.navigate('MainApp');
+
     } catch (error) {
       if (error.code === 'auth/email-already-in-use') {
         setError('Bu kullanıcı adı zaten kullanılıyor');
@@ -52,7 +61,6 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hesap Oluştur</Text>
       <TextInput
         style={styles.input}
         placeholder="Kullanıcı Adı"
@@ -79,6 +87,20 @@ const RegisterScreen = ({ navigation }) => {
         editable={!loading}
         color={theme.colors.text}
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Tekrar Şifre"
+        placeholderTextColor={theme.colors.secondary}
+        value={confirmPassword}
+        onChangeText={(text) => {
+          setConfirmPassword(text);
+          setError('');
+        }}
+        secureTextEntry
+        editable={!loading}
+        color={theme.colors.text}
+      />
+
       
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -104,16 +126,8 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 50,
     backgroundColor: theme.colors.background,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 40,
-    textAlign: 'center',
-    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,

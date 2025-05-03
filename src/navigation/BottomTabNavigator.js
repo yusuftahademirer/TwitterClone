@@ -24,7 +24,7 @@ const BottomTabNavigator = () => {
         name="Feed"
         component={FeedScreen}
         options={{
-        headerShown: false,
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Feather name="home" size={size} color={color} />
           ),
@@ -35,7 +35,7 @@ const BottomTabNavigator = () => {
         name="Tweet"
         component={CreateTweetScreen}
         options={{
-        headerShown: false,
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Feather name="feather" size={size} color={color} />
           ),
@@ -46,7 +46,7 @@ const BottomTabNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          headerShown: false, // Header'ı gizle
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Feather name="user" size={size} color={color} />
           ),

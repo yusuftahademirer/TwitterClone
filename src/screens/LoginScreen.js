@@ -49,7 +49,6 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}><HeaderLogo></HeaderLogo></Text>
       <TextInput
         style={styles.input}
         placeholder="Kullanıcı Adı"
@@ -101,16 +100,8 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 50,
     backgroundColor: theme.colors.background,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 40,
-    textAlign: 'center',
-    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,
