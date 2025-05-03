@@ -67,6 +67,14 @@ const AppNavigator = () => {
             headerShown: false, // Sadece Profile ekranında header gizli
           }}
         />
+        <Stack.Screen
+          name="Comment"
+          component={CommentScreen} // Comment ekranı bileşeni
+          options={{
+            headerTitle: 'Yorum Yap',
+            headerBackTitleVisible: false,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
