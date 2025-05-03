@@ -8,6 +8,7 @@ export const theme = {
     border: '#383847',     // Kenarlık rengi
     twitterBlue: '#1DA1F2', // Twitter'ın karakteristik mavi rengi
     retweetGreen: '#00BA7C', // Retweet için yeşil renk
-    likeRed: '#F91880'     // Beğeni için kırmızı renk
+    likeRed: '#F91880',     // Beğeni için kırmızı renk
+    error: '#FF3D00',      // Hata durumu için kırmızı renk
   }
 };

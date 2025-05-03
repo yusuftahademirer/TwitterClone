@@ -37,8 +37,9 @@ const FeedScreen = ({ navigation }) => {
 
   const loadTweets = async () => {
     try {
+      const tweetsRef = collection(db, 'tweets');
       const tweetsQuery = query(
-        collection(db, 'tweets'),
+        tweetsRef,
         orderBy('createdAt', 'desc')
       );
 
@@ -168,30 +169,34 @@ const FeedScreen = ({ navigation }) => {
             style={styles.actionButton}
             onPress={() => handleRetweet(item)}
           >
-            <Feather 
-              name="repeat" 
-              size={20} 
-              color={isRetweeted ? theme.colors.retweetGreen : theme.colors.secondary}
-            />
-            <Text style={[
-              styles.actionText,
-              isRetweeted && { color: theme.colors.retweetGreen }
-            ]}>{retweetCount}</Text>
+            <View style={styles.actionWrapper}>
+              <Feather 
+                name="repeat" 
+                size={20} 
+                color={isRetweeted ? theme.colors.retweetGreen : theme.colors.secondary}
+              />
+              <Text style={[
+                styles.actionText,
+                isRetweeted && { color: theme.colors.retweetGreen }
+              ]}>{retweetCount}</Text>
+            </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.actionButton}
             onPress={() => handleLike(item)}
           >
-            <Feather 
-              name={isLiked ? "heart" : "heart"} 
-              size={20} 
-              color={isLiked ? theme.colors.likeRed : theme.colors.secondary}
-            />
-            <Text style={[
-              styles.actionText,
-              isLiked && { color: theme.colors.likeRed }
-            ]}>{likeCount}</Text>
+            <View style={styles.actionWrapper}>
+              <Feather 
+                name={isLiked ? "heart" : "heart"} 
+                size={20} 
+                color={isLiked ? theme.colors.likeRed : theme.colors.secondary}
+              />
+              <Text style={[
+                styles.actionText,
+                isLiked && { color: theme.colors.likeRed }
+              ]}>{likeCount}</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -305,7 +310,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     color: theme.colors.secondary,
     fontSize: 14,
-    minWidth: 15,
   },
 });
 

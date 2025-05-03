@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { theme } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
@@ -21,12 +22,19 @@ const LoginScreen = ({ navigation }) => {
       setError('');
       setLoading(true);
 
-      // Kullanıcı adını email formatına çevir
       const email = `${username.toLowerCase()}@twitterclone.com`;
-
-      // Firebase Authentication ile giriş yap
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
+      // Kullanıcı bilgilerini AsyncStorage'a kaydet
+      await AsyncStorage.setItem('@user', JSON.stringify({
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        username: username
+      }));
+
+      // Başarılı girişten sonra MainApp ekranına yönlendir
+      navigation.replace('MainApp');
+
     } catch (error) {
       console.error('Giriş hatası:', error.message);
       setError('Geçersiz kullanıcı adı veya şifre');
