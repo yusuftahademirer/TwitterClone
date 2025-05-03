@@ -1,27 +1,50 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from '../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { theme } from '../constants/theme';
 
 const RegisterScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password) {
-      setError('Lütfen email ve şifre giriniz');
+    if (!username || !password) {
+      setError('Lütfen tüm alanları doldurunuz');
       return;
     }
 
     try {
       setLoading(true);
       setError('');
-      await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Kullanıcı adını email formatına çevir
+      const email = `${username.toLowerCase()}@twitterclone.com`;
+      
+      // Firebase ile kullanıcı oluştur
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Kullanıcı profilini güncelle
+      await updateProfile(user, {
+        displayName: username
+      });
+
+      // Firestore'da kullanıcı bilgilerini sakla
+      await setDoc(doc(db, 'users', user.uid), {
+        username: username,
+        createdAt: new Date()
+      });
+
     } catch (error) {
-      setError(error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('Bu kullanıcı adı zaten kullanılıyor');
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -32,15 +55,14 @@ const RegisterScreen = ({ navigation }) => {
       <Text style={styles.title}>Hesap Oluştur</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Kullanıcı Adı"
         placeholderTextColor={theme.colors.secondary}
-        value={email}
+        value={username}
         onChangeText={(text) => {
-          setEmail(text);
+          setUsername(text);
           setError('');
         }}
         autoCapitalize="none"
-        keyboardType="email-address"
         editable={!loading}
         color={theme.colors.text}
       />
@@ -83,13 +105,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 50,
     backgroundColor: theme.colors.background,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 40,
     textAlign: 'center',
     color: theme.colors.text,
   },
@@ -99,11 +121,11 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     borderRadius: 6,
-    marginBottom: 10,
+    marginBottom: 24,
     backgroundColor: theme.colors.tertiary,
   },
   button: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.twitterBlue,
     padding: 15,
     borderRadius: 6,
     marginBottom: 10,
@@ -118,9 +140,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   link: {
-    color: theme.colors.text,
+    color: theme.colors.twitterBlue,
     textAlign: 'center',
     fontSize: 14,
+    marginTop: 30
   },
   errorText: {
     color: '#ff6b6b',

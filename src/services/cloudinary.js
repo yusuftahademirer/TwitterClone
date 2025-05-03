@@ -1,12 +1,12 @@
-import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '@env';
+import { EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET } from '@env';
 
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 export const uploadImage = async (base64Image) => {
   try {
     const formData = new FormData();
     formData.append('file', `data:image/jpeg;base64,${base64Image}`);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('upload_preset', EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
 
     console.log('Cloudinary\'ye yükleme başlıyor...');
     

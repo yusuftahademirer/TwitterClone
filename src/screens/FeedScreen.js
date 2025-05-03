@@ -1,59 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { collection, query, orderBy, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Feather } from '@expo/vector-icons';
 import { db, auth } from '../services/firebase';
 import { theme } from '../constants/theme';
 
-const FeedScreen = () => {
+const FeedScreen = ({ navigation }) => {
   const [tweets, setTweets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [commentCounts, setCommentCounts] = useState({});
+  const commentUnsubscribers = useRef({});
 
-  useEffect(() => {
-    console.log('FeedScreen - Tweet verilerini yüklemeye başlıyor...');
+  const loadCommentCounts = async (tweetIds) => {
+    Object.values(commentUnsubscribers.current).forEach(unsubscribe => unsubscribe());
+    commentUnsubscribers.current = {};
+    setCommentCounts({});
+
+    tweetIds.forEach(tweetId => {
+      const commentsRef = collection(db, 'tweets', tweetId, 'comments');
+      const commentsQuery = query(commentsRef, orderBy('createdAt', 'desc'));
+      
+      const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+        setCommentCounts(prev => ({
+          ...prev,
+          [tweetId]: snapshot.docs.length
+        }));
+      }, (error) => {
+        console.error('Yorum sayısı takip hatası:', error);
+      });
+
+      commentUnsubscribers.current[tweetId] = unsubscribe;
+    });
+  };
+
+  const loadTweets = async () => {
     try {
       const tweetsQuery = query(
         collection(db, 'tweets'),
         orderBy('createdAt', 'desc')
       );
 
-      console.log('FeedScreen - Query oluşturuldu, dinlemeye başlıyor...');
-      
-      const unsubscribe = onSnapshot(tweetsQuery, (snapshot) => {
-        console.log('FeedScreen - Yeni veri alındı, tweet sayısı:', snapshot.docs.length);
-        const tweetList = snapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log('Tweet verisi:', {
+      return new Promise((resolve, reject) => {
+        const unsubscribe = onSnapshot(tweetsQuery, (snapshot) => {
+          const tweetList = snapshot.docs.map(doc => ({
             id: doc.id,
-            text: data.text,
-            username: data.username,
-            hasImage: !!data.imageUrl,
-            timestamp: data.createdAt
-          });
-          return {
-            id: doc.id,
-            ...data
-          };
+            ...doc.data()
+          }));
+          setTweets(tweetList);
+          loadCommentCounts(tweetList.map(tweet => tweet.id));
+          resolve();
+        }, (error) => {
+          console.error('Tweet yükleme hatası:', error);
+          setError(error.message);
+          reject(error);
         });
-        setTweets(tweetList);
-        setLoading(false);
-      }, (error) => {
-        console.error('FeedScreen - Firestore dinleme hatası:', error);
-        setError(error.message);
-        setLoading(false);
-      });
 
-      return () => {
-        console.log('FeedScreen - Dinleme sonlandırılıyor...');
-        unsubscribe();
-      };
+        return () => {
+          unsubscribe();
+          Object.values(commentUnsubscribers.current).forEach(unsubscribe => unsubscribe());
+          commentUnsubscribers.current = {};
+        };
+      });
     } catch (error) {
-      console.error('FeedScreen - Genel hata:', error);
+      console.error('Tweet yükleme hatası:', error);
       setError(error.message);
-      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadTweets().finally(() => {
+      setLoading(false);
+    });
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadTweets();
+    } catch (error) {
+      console.error('Yenileme hatası:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLike = async (tweet) => {
     try {
@@ -101,26 +132,36 @@ const FeedScreen = () => {
     const isRetweeted = item.retweets?.includes(userId) || false;
     const likeCount = item.likes?.length || 0;
     const retweetCount = item.retweets?.length || 0;
+    const commentCount = commentCounts[item.id] || 0;
 
     return (
       <View style={styles.tweetContainer}>
         <Text style={styles.username}>{item.username}</Text>
         <Text style={styles.tweetText}>{item.text}</Text>
-        {item.imageUrl && (
-          <Image 
-            source={{ uri: item.imageUrl }} 
-            style={styles.tweetImage}
-            resizeMode="cover"
-          />
-        )}
         <Text style={styles.timestamp}>
           {item.createdAt?.toDate ? new Date(item.createdAt?.toDate()).toLocaleDateString() : 'Tarih yok'}
         </Text>
         
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="message-circle" size={20} color={theme.colors.secondary} />
-            <Text style={styles.actionText}>0</Text>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Comment', {
+              tweetId: item.id,
+              tweetText: item.text,
+              tweetUsername: item.username
+            })}
+          >
+            <View style={styles.actionWrapper}>
+              <Feather 
+                name="message-circle" 
+                size={20} 
+                color={commentCount > 0 ? theme.colors.twitterBlue : theme.colors.secondary} 
+              />
+              <Text style={[
+                styles.actionText,
+                commentCount > 0 && { color: theme.colors.twitterBlue }
+              ]}>{commentCount > 0 ? commentCount : ''}</Text>
+            </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -188,6 +229,14 @@ const FeedScreen = () => {
         renderItem={renderTweet}
         keyExtractor={(item) => item.id}
         style={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.twitterBlue}
+            colors={[theme.colors.twitterBlue]}
+          />
+        }
       />
     </View>
   );
@@ -224,15 +273,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: theme.colors.text,
   },
-  tweetImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
   timestamp: {
     fontSize: 12,
     color: theme.colors.secondary,
+    marginBottom: 10,
   },
   errorText: {
     color: '#ff6b6b',
@@ -248,16 +292,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
-    paddingTop: 10,
   },
-  actionButton: {
+  actionWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 50,
+  },
+  actionButton: {
+    padding: 5,
   },
   actionText: {
     marginLeft: 5,
     color: theme.colors.secondary,
     fontSize: 14,
+    minWidth: 15,
   },
 });
 

@@ -5,29 +5,31 @@ import { auth } from '../services/firebase';
 import { theme } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 
-
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Lütfen email ve şifre giriniz');
+    if (!username || !password) {
+      setError('Lütfen kullanıcı adı ve şifre giriniz');
       return;
     }
 
     try {
       setError('');
       setLoading(true);
+
+      // Kullanıcı adını email formatına çevir
+      const email = `${username.toLowerCase()}@twitterclone.com`;
+
+      // Firebase Authentication ile giriş yap
       await signInWithEmailAndPassword(auth, email, password);
-      // Başarılı giriş sonrası AppNavigator otomatik olarak Main ekranına yönlendirecek
+      
     } catch (error) {
       console.error('Giriş hatası:', error.message);
-      setError(error.message === 'Firebase: Error (auth/invalid-credential).' 
-        ? 'Geçersiz email veya şifre' 
-        : error.message);
+      setError('Geçersiz kullanıcı adı veya şifre');
     } finally {
       setLoading(false);
     }
@@ -36,22 +38,20 @@ const LoginScreen = ({ navigation }) => {
   const HeaderLogo = () => (
     <Feather name="twitter" size={34} color={theme.colors.twitterBlue} />
   );
-  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}><HeaderLogo></HeaderLogo></Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Kullanıcı Adı"
         placeholderTextColor={theme.colors.secondary}
-        value={email}
+        value={username}
         onChangeText={(text) => {
-          setEmail(text);
+          setUsername(text);
           setError('');
         }}
         autoCapitalize="none"
-        keyboardType="email-address"
         editable={!loading}
         color={theme.colors.text}
       />

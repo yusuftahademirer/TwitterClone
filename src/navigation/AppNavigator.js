@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
+import { auth } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FeedScreen from '../screens/FeedScreen';
 import CreateTweetScreen from '../screens/CreateTweetScreen';
-import { auth } from '../services/firebase';
+import CommentScreen from '../screens/CommentScreen';
 import { theme } from '../constants/theme';
 
 const Stack = createStackNavigator();
@@ -28,11 +29,9 @@ const TabNavigator = () => {
         tabBarShowLabel: false,
         headerTitleAlign: 'center',
         headerStyle: {
-          elevation: 0,
-          shadowOpacity: 0,
+          backgroundColor: theme.colors.background,
           borderBottomWidth: 0.5,
           borderBottomColor: theme.colors.border,
-          backgroundColor: theme.colors.background,
         },
         tabBarStyle: {
           backgroundColor: theme.colors.background,
@@ -54,19 +53,45 @@ const TabNavigator = () => {
         name="CreateTweet" 
         component={CreateTweetScreen}
         options={{
-          headerTitle: () => (
-            <View>
-              <Text style={{ color: theme.colors.text, fontSize: 16 }}>
-                Tweet Oluştur
-              </Text>
-            </View>
-          ),
+          headerTitle: 'Tweet Oluştur',
           tabBarIcon: ({ color, size }) => (
             <Feather name="plus-square" size={size} color={color} />
           ),
         }}
       />
     </Tab.Navigator>
+  );
+};
+
+const MainNavigator = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          color: theme.colors.text,
+        },
+        headerTitleAlign: 'center',
+        cardStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      <Stack.Screen 
+        name="MainTabs" 
+        component={TabNavigator}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Comment" 
+        component={CommentScreen}
+        options={{ 
+          title: 'Yorumlar',
+          headerBackTitle: null,
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 
@@ -84,43 +109,36 @@ const AppNavigator = () => {
   }, []);
 
   if (loading) {
-    return null; // veya bir loading spinner gösterebilirsiniz
+    return null;
   }
 
+  const customTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: theme.colors.twitterBlue,
+      background: theme.colors.background,
+      card: theme.colors.background,
+      text: theme.colors.text,
+      border: theme.colors.border,
+    },
+  };
+
   return (
-    <NavigationContainer
-      theme={{
-        dark: true,
-        colors: {
-          primary: theme.colors.text,
-          background: theme.colors.background,
-          card: theme.colors.background,
-          text: theme.colors.text,
-          border: theme.colors.border,
-          notification: theme.colors.primary,
-        },
-      }}
-    >
-      <Stack.Navigator>
+    <NavigationContainer theme={customTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: theme.colors.background },
+        }}
+      >
         {!user ? (
           <>
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen}
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
-          <Stack.Screen 
-            name="Main" 
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
